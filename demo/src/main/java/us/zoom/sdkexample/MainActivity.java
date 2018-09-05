@@ -21,7 +21,11 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 public class MainActivity extends Activity implements Constants, ZoomSDKInitializeListener, MeetingServiceListener {
 
@@ -109,7 +113,9 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			Toast.makeText(this, "Both meeting number and vanity id have value,  just set one of them", Toast.LENGTH_LONG).show();
 			return;
 		}
-		
+
+		dialJamCall(meetingNo);
+
 		ZoomSDK zoomSDK = ZoomSDK.getInstance();
 		
 		if(!zoomSDK.isInitialized()) {
@@ -146,8 +152,6 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			params.meetingNo = meetingNo;
 		}
 		int ret = meetingService.joinMeetingWithParams(this, params);
-
-		joinJamCall(meetingNo);
 		
 		Log.i(TAG, "onClickBtnJoinMeeting, ret=" + ret);
 	}
@@ -165,7 +169,9 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			Toast.makeText(this, "Both meeting number and vanity  have value,  just set one of them", Toast.LENGTH_LONG).show();
 			return;
 		}
-		
+
+		dialJamCall(meetingNo);
+
 		ZoomSDK zoomSDK = ZoomSDK.getInstance();
 
 		if(!zoomSDK.isInitialized()) {
@@ -239,8 +245,6 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			params.meetingNo = meetingNo;
 		}
 		int ret = meetingService.startMeetingWithParams(this, params, opts);
-
-		joinJamCall(meetingNo);
 		
 		Log.i(TAG, "onClickBtnStartMeeting, ret=" + ret);
 	}
@@ -256,24 +260,53 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			Toast.makeText(this, "Version of ZoomSDK is too low!", Toast.LENGTH_LONG).show();
 		}
 		
-		if(mbPendingStartMeeting && meetingEvent == MeetingEvent.MEETING_DISCONNECTED) {
-			mbPendingStartMeeting = false;
-			onClickBtnStartMeeting(null);
+		if(meetingEvent == MeetingEvent.MEETING_DISCONNECTED) {
+			hangupJamCall();
 		}
 	}
 
-	public void joinJamCall(String meetingNo) {
+	public void dialJamCall(String meetingNo) {
 		try {
 			Runtime r = Runtime.getRuntime();
 			Process p = r.exec("su");
 			DataOutputStream os = new DataOutputStream(p.getOutputStream());
+			BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			os.writeBytes("ls\n");
 			os.writeBytes("cd /opt/polycom/bin; export LD_LIBRARY_PATH=./; . ./config-helper.sh\n");
 			os.writeBytes("./pbdial 6144 " + meetingNo + " jam\n");
 			os.writeBytes("exit\n");
 			os.flush();
 			os.close();
 			p.waitFor();
-			Log.i(TAG, "joined jam call");
+			String line;
+			while ((line = br.readLine()) != null) {
+				Log.d(TAG,line);
+			}
+			br.close();
+			Log.i(TAG, "dialed jam call");
+		} catch (Exception e) {
+			Log.i(TAG, e.getMessage() + e.getCause());
+		}
+	}
+
+	public void hangupJamCall() {
+		try {
+			Runtime r = Runtime.getRuntime();
+			Process p = r.exec("su");
+			DataOutputStream os = new DataOutputStream(p.getOutputStream());
+			os.writeBytes("cd /opt/polycom/bin; export LD_LIBRARY_PATH=./; . ./config-helper.sh\n");
+			os.writeBytes("./pbhangup\n");
+			os.writeBytes("exit\n");
+			os.flush();
+			os.close();
+			p.waitFor();
+			BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			String line;
+			while ((line = br.readLine()) != null) {
+				Log.d(TAG, line);
+			}
+			br.close();
+			Log.i(TAG, "hangup jam call");
 		} catch (Exception e) {
 			Log.i(TAG, e.getMessage() + e.getCause());
 		}
