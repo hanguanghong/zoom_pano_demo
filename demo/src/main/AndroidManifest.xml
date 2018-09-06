@@ -74,7 +74,15 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        
+
+        <activity
+            android:name="us.zoom.sdkexample.DemoMeetingActivity"
+            android:configChanges="orientation|screenSize"
+            android:hardwareAccelerated="false"
+            android:theme="@style/ZMTheme.SubWindow"
+            android:process=":zoom_meeting"
+            android:screenOrientation="landscape" />
+
         <!--
             Commented content should be opened if your ADT version is lower than v20, 
             or you remove the "manifestmerger.enabled=true" from project.properties
