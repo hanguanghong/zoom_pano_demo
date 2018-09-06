@@ -7,6 +7,7 @@ import us.zoom.sdk.MeetingEvent;
 import us.zoom.sdk.MeetingService;
 import us.zoom.sdk.MeetingServiceListener;
 import us.zoom.sdk.MeetingStatus;
+import us.zoom.sdk.MeetingViewsOptions;
 import us.zoom.sdk.StartMeetingOptions;
 import us.zoom.sdk.StartMeetingParamsWithoutLogin;
 import us.zoom.sdk.ZoomError;
@@ -215,18 +216,18 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		
 		StartMeetingOptions opts = new StartMeetingOptions();
 //		opts.no_driving_mode = true;
-//		opts.no_invite = true;
+		opts.no_invite = true;
 //		opts.no_meeting_end_message = true;
 //		opts.no_titlebar = true;
 //		opts.no_bottom_toolbar = true;
-//		opts.no_dial_in_via_phone = true;
-//		opts.no_dial_out_to_phone = true;
+		opts.no_dial_in_via_phone = true;
+		opts.no_dial_out_to_phone = true;
 //		opts.no_disconnect_audio = true;
 //		opts.no_share = true;
 //		opts.invite_options = InviteOptions.INVITE_ENABLE_ALL;
-//		opts.no_audio = true;
-//		opts.no_video = true;
-//		opts.meeting_views_options = MeetingViewsOptions.NO_BUTTON_SHARE + MeetingViewsOptions.NO_BUTTON_VIDEO;
+		opts.no_audio = true;
+		opts.no_video = true;
+		opts.meeting_views_options = MeetingViewsOptions.NO_BUTTON_VIDEO;
 //		opts.no_meeting_error_message = true;
 
         StartMeetingParamsWithoutLogin params = new StartMeetingParamsWithoutLogin();
@@ -264,7 +265,6 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			Process p = r.exec("su");
 			DataOutputStream os = new DataOutputStream(p.getOutputStream());
 			BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			os.writeBytes("ls\n");
 			os.writeBytes("cd /opt/polycom/bin; export LD_LIBRARY_PATH=./; . ./config-helper.sh\n");
 			os.writeBytes("./pbdial 6144 " + meetingNo + " jam\n");
 			os.writeBytes("exit\n");
@@ -272,10 +272,13 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			os.close();
 			p.waitFor();
 			String line;
+			StringBuilder sb = new StringBuilder(4096);
 			while ((line = br.readLine()) != null) {
-				Log.d(TAG,line);
+				sb.append(line);
+				sb.append("\n");
 			}
 			br.close();
+			Log.d(TAG, sb.toString());
 			Log.i(TAG, "dialed jam call");
 		} catch (Exception e) {
 			Log.i(TAG, e.getMessage() + e.getCause());
@@ -287,18 +290,21 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			Runtime r = Runtime.getRuntime();
 			Process p = r.exec("su");
 			DataOutputStream os = new DataOutputStream(p.getOutputStream());
+			BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			os.writeBytes("cd /opt/polycom/bin; export LD_LIBRARY_PATH=./; . ./config-helper.sh\n");
 			os.writeBytes("./pbhangup\n");
 			os.writeBytes("exit\n");
 			os.flush();
 			os.close();
 			p.waitFor();
-			BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			String line;
+			StringBuilder sb = new StringBuilder(4096);
 			while ((line = br.readLine()) != null) {
-				Log.d(TAG, line);
+				sb.append(line);
+				sb.append("\n");
 			}
 			br.close();
+			Log.d(TAG, sb.toString());
 			Log.i(TAG, "hangup jam call");
 		} catch (Exception e) {
 			Log.i(TAG, e.getMessage() + e.getCause());
