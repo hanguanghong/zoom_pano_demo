@@ -33,7 +33,6 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 	
 	private EditText mEdtMeetingNo;
 	private EditText mEdtMeetingPassword;
-	private EditText mEdtVanityId;
 	
 	private final static int STYPE = MeetingService.USER_TYPE_API_USER;
 	private final static String DISPLAY_NAME = "Zoom Demo";
@@ -47,7 +46,6 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		setContentView(R.layout.main);
 
 		mEdtMeetingNo = (EditText)findViewById(R.id.edtMeetingNo);
-		mEdtVanityId = (EditText)findViewById(R.id.edtVanityUrl);
 		mEdtMeetingPassword = (EditText)findViewById(R.id.edtMeetingPassword);
 		
 		if(savedInstanceState == null) {
@@ -102,7 +100,7 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		String vanityId = "";
 		String meetingPassword = mEdtMeetingPassword.getText().toString().trim();
 
-		String meetingNo = mEdtVanityId.getText().toString().trim();
+		String meetingNo = mEdtMeetingNo.getText().toString().trim();
 		
 		if(meetingNo.length() == 0 && vanityId.length() == 0) {
 			Toast.makeText(this, "You need to enter a meeting number/ vanity id which you want to join.", Toast.LENGTH_LONG).show();
@@ -158,14 +156,13 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 	
 	public void onClickBtnStartMeeting(View view) {
 		String meetingNo = mEdtMeetingNo.getText().toString().trim();
-		String vanityId = mEdtVanityId.getText().toString().trim();
 
-		if(meetingNo.length() == 0 && vanityId.length() == 0) {
+		if(meetingNo.length() == 0) {
 			Toast.makeText(this, "You need to enter a meeting number/ vanity  which you want to join.", Toast.LENGTH_LONG).show();
 			return;
 		}
 
-		if(meetingNo.length() != 0 && vanityId.length() !=0) {
+		if(meetingNo.length() != 0) {
 			Toast.makeText(this, "Both meeting number and vanity  have value,  just set one of them", Toast.LENGTH_LONG).show();
 			return;
 		}
@@ -238,12 +235,8 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		params.userType = STYPE;;
 		params.displayName = DISPLAY_NAME;
 		params.zoomAccessToken = ZOOM_ACCESS_TOKEN;
+		params.meetingNo = meetingNo;
 
-		if(vanityId.length() != 0) {
-			params.vanityID = vanityId;
-		} else {
-			params.meetingNo = meetingNo;
-		}
 		int ret = meetingService.startMeetingWithParams(this, params, opts);
 		
 		Log.i(TAG, "onClickBtnStartMeeting, ret=" + ret);
@@ -310,5 +303,9 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		} catch (Exception e) {
 			Log.i(TAG, e.getMessage() + e.getCause());
 		}
+	}
+
+	public void onClickBtnExit(View view) {
+		finish();
 	}
 }

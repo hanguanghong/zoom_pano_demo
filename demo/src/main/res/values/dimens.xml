@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <dimen name="edit_width">500dp</dimen>
+    <dimen name="vertical_margin">15dp</dimen>
+    <dimen name="btn_width">220dp</dimen>
+    <dimen name="btn_height">38dp</dimen>
+    <dimen name="txt_size">23sp</dimen>
+    <dimen name="icon_margin_top">60dp</dimen>
+    <dimen name="icon_margin_bottom">70dp</dimen>
+
+</resources>
