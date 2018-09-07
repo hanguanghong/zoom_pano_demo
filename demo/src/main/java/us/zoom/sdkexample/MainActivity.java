@@ -268,7 +268,9 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			os.writeBytes("umount /data/demo\n");
 			os.writeBytes("busybox mount -t nfs -o nolock,proto=tcp 10.220.225.29:/data2/demo /data/demo\n");
 			os.writeBytes("cd /opt/polycom/bin; export LD_LIBRARY_PATH=./; . ./config-helper.sh\n");
-			os.writeBytes("set_config comm.Callpreference.jamfactoryaddress 0 http://10.220.225.148:8080/");
+			os.writeBytes("set_config feature.master.callservice.enabled 0 True\n");
+			os.writeBytes("set_config pm.layout.style 0 PANO\n");
+			os.writeBytes("set_config comm.Callpreference.jamfactoryaddress 0 http://10.220.225.148:8080/\n");
 			os.writeBytes("./pbdial 6144 " + meetingNo + " jam\n");
 			os.writeBytes("exit\n");
 			os.flush();

@@ -130,7 +130,7 @@ public class DemoMeetingActivity extends MeetingActivity {
                             e.printStackTrace();
                             break;
                         }
-                    } else if (!f.exists() && isAtBack) {
+                    } else if (isAtBack && !f.exists()) {
                         ActivityManager am = (ActivityManager) getSystemService(Activity.ACTIVITY_SERVICE);
                         List<ActivityManager.RunningTaskInfo> rt = am.getRunningTasks(Integer.MAX_VALUE);
 
