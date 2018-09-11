@@ -9,6 +9,8 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.FileObserver;
+import android.support.annotation.Nullable;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
@@ -33,13 +35,16 @@ public class DemoMeetingActivity extends MeetingActivity {
     private boolean isStopping;
     private boolean isAtBack;
 
+    private int hashCode;
+
     protected void onResume() {
         Log.i(TAG, "onResume " + this.hashCode());
         super.onResume();
+        this.hashCode = this.hashCode();
     }
 
     protected void onStop() {
-        Log.i(TAG, "onResume " + this.hashCode());
+        Log.i(TAG, "onStop " + this.hashCode());
         isStopping = true;
         super.onStop();
     }
@@ -60,13 +65,13 @@ public class DemoMeetingActivity extends MeetingActivity {
     protected void onStartShare()
     {
         Log.i(TAG, "onStartShare");
-        if (isSharingScreen()) {
-            Log.i(TAG, "isSharingScreen");
-            createSharingInd();
-        }
         if (isSharingOut()) {
             Log.i(TAG, "isSharingOut");
             this.isSharingOut = true;
+        }
+        if (isSharingScreen()) {
+            Log.i(TAG, "isSharingScreen");
+            createSharingInd();
         }
     }
 
@@ -81,14 +86,18 @@ public class DemoMeetingActivity extends MeetingActivity {
         Log.i(TAG, "createSharingInd");
         try {
             File f = new File(PATH_TO_SHARING_IND);
-            f.createNewFile();
+            if (!f.exists()) {
+                f.createNewFile();
+                //f.setReadable(true, false);
+            }
             FileOutputStream fos = new FileOutputStream(f);
             DataOutputStream dos = new DataOutputStream(fos);
             dos.writeInt(this.hashCode());
+            dos.flush();
             dos.close();
             fos.close();
         } catch (Exception e) {
-            Log.i(TAG, e.getStackTrace().toString());
+            e.printStackTrace();
         }
     }
 
@@ -104,45 +113,67 @@ public class DemoMeetingActivity extends MeetingActivity {
         }
     }
 
-    class CheckIndTask extends AsyncTask {
-        @Override
-        protected Object doInBackground(Object... params) {
-            File f = new File(PATH_TO_SHARING_IND);
-            do {
-                if (!isSharingOut && f.exists()) {
-                    if (f.exists() && !isAtBack) {
-                        try {
-                            FileInputStream fis = new FileInputStream(f);
-                            DataInputStream dis = new DataInputStream(fis);
-                            int hc = dis.readInt();
-                            dis.close();
-                            fis.close();
-                            Log.d(TAG, "hc=" + hc);
-                            if (hc != this.hashCode()) {
-                                Log.i(TAG, "sharing ind exists and not sharing out");
+    private void onSharingIndExist() {
+        Log.i(TAG, "onSharingIndExist");
+        if (!isAtBack && !isSharingOut) {
+            try {
+                File f = new File(PATH_TO_SHARING_IND);
+                FileInputStream fis = new FileInputStream(f);
+                DataInputStream dis = new DataInputStream(fis);
+                int rint = dis.readInt();
+                dis.close();
+                fis.close();
+                Log.d(TAG, "rint=" + rint + ", this.hashCode=" + hashCode);
+                if (rint != hashCode) {
+                    Log.i(TAG, "sharing ind exists and not sharing out");
 
-                                //TODO: take Zoom to background
-                                moveTaskToBack(true);
-                                //switchToHomeActivity();
-                                isAtBack = true;
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            break;
-                        }
-                    } else if (isAtBack && !f.exists()) {
+                    //TODO: take Zoom to background
+                    onBackPressed();
+                    //switchToHomeActivity();
+                    isAtBack = true;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void onSharingIndRemoved() {
+        Log.i(TAG, "onSharingIndRemoved");
+        if (isAtBack) {
+                                    /*
                         ActivityManager am = (ActivityManager) getSystemService(Activity.ACTIVITY_SERVICE);
                         List<ActivityManager.RunningTaskInfo> rt = am.getRunningTasks(Integer.MAX_VALUE);
 
                         for (int i = 0; i < rt.size(); i++)
                         {
-                            // bring to front
-                            //if (rt.get(i).baseActivity.toShortString().indexOf("yourproject") > -1) {
-                            //    am.moveTaskToFront(rt.get(i).id, ActivityManager.MOVE_TASK_WITH_HOME);
-                            //}
+                            Log.d(TAG, "rt.get(i).baseActivity.toShortString()=" + rt.get(i).baseActivity.toShortString());
+                            // bring Zoom to front
+                            if (rt.get(i).baseActivity.toShortString().indexOf("us.zoom.sdkexample") > -1) {
+                                Log.d(TAG,"moveTaskToFront");
+                                am.moveTaskToFront(rt.get(i).id, ActivityManager.MOVE_TASK_WITH_HOME);
+                            }
                         }
-                        isAtBack = false;
-                    }
+                        */
+            //restore();
+            isAtBack = false;
+        }
+    }
+
+    class CheckIndTask extends AsyncTask {
+        @Override
+        protected Object doInBackground(Object... params) {
+            File f = new File(PATH_TO_SHARING_IND);
+            do {
+                Log.d(TAG, "CheckIndTask isSharingOut=" + isSharingOut + ";f.exists()=" + f.exists());
+                String[] pl = f.getParentFile().list();
+                for (String s : pl) {
+                    Log.d(TAG, s);
+                }
+                if (f.exists()) {
+                    onSharingIndExist();
+                } else if (isAtBack) {
+                    onSharingIndRemoved();
                 }
                 try {
                     Thread.sleep(100);
@@ -155,11 +186,16 @@ public class DemoMeetingActivity extends MeetingActivity {
         }
     }
 
-    private void switchToHomeActivity() {
-        Intent intent = new Intent(Intent.ACTION_MAIN);
-        String packageName = "polycom.home";
-        String className = "polycom.home.HomeActivity";
-        intent.setClassName(packageName, className);
+    /*
+    @Override
+    public void onBackPressed()
+    {
+        moveTaskToBack(true);
+    }*/
+
+    private void restore() {
+        Intent intent = new Intent(DemoMeetingActivity.this, DemoMeetingActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
     }
 }

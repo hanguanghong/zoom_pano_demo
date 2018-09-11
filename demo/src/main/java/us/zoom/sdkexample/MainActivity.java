@@ -265,8 +265,6 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			Process p = r.exec("su");
 			DataOutputStream os = new DataOutputStream(p.getOutputStream());
 			BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			os.writeBytes("umount /data/demo\n");
-			os.writeBytes("busybox mount -t nfs -o nolock,proto=tcp 10.220.225.29:/data2/demo /data/demo\n");
 			os.writeBytes("cd /opt/polycom/bin; export LD_LIBRARY_PATH=./; . ./config-helper.sh\n");
 			os.writeBytes("set_config feature.master.callservice.enabled 0 True\n");
 			os.writeBytes("set_config pm.layout.style 0 PANO\n");
