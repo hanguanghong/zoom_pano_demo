@@ -10,6 +10,7 @@ android {
         targetSdkVersion 25
 		versionCode 1
         versionName "1.0"
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -21,11 +22,13 @@ android {
 }
 
 dependencies {
+    //compile 'com.android.support:multidex:1.0.3'
     compile 'com.android.support:support-v4:25.3.1'
     compile 'com.android.support:recyclerview-v7:25.3.1'
     compile project(':commonlib')
     compile project(':mobilertc')
-	//For share with dropbox
-	//compile 'com.dropbox.core:dropbox-core-sdk:3.0.5'
-	//compile 'com.squareup.okhttp3:okhttp:3.5.0'
+    //For share with dropbox
+    //compile 'com.dropbox.core:dropbox-core-sdk:3.0.5'
+    //compile 'com.squareup.okhttp3:okhttp:3.5.0'
+    implementation files('libs/nsq-0.0.1-SNAPSHOT.jar')
 }

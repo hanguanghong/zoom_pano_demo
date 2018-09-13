@@ -1,5 +1,10 @@
 package us.zoom.sdkexample;
 
+import ly.bit.nsq.NSQProducer;
+import ly.bit.nsq.exceptions.NSQException;
+import ly.bit.nsq.lookupd.BasicLookupd;
+import ly.bit.nsq.syncresponse.SyncResponseHandler;
+import ly.bit.nsq.syncresponse.SyncResponseReader;
 import us.zoom.sdk.MeetingActivity;
 
 import android.app.Activity;
@@ -26,10 +31,17 @@ import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.List;
+import ly.bit.nsq.Message;
 
 public class DemoMeetingActivity extends MeetingActivity {
     private final static String TAG = "Zoom Demo MeetingAct";
     private final static String PATH_TO_SHARING_IND = "/data/demo/zoom_share";
+    private final static String NSQ_SEND_ADDRESS = "http://10.220.225.29:4151";
+    private final static String NSC_RECV_ADDRESS = "http://10.220.225.29:4161";
+    private final static String NSQ_TOPIC = "zoomShare";
+
+    private NSQProducer producer = new NSQProducer(NSQ_SEND_ADDRESS, NSQ_TOPIC);
+    private SyncResponseReader reader;
 
     private boolean isSharingOut;
     private boolean isStopping;
@@ -52,13 +64,15 @@ public class DemoMeetingActivity extends MeetingActivity {
     @Override
     protected void onMeetingConnected() {
         Log.i(TAG, "onMeetingConnected");
-        new Thread() {
-            @Override
-            public void run() {
-                CheckIndTask t = new CheckIndTask();
-                t.execute();
-            }
-        }.start();
+        if (reader == null) {
+            new Thread() {
+                @Override
+                public void run() {
+                    CreateNSQReaderTask t = new CreateNSQReaderTask();
+                    t.execute();
+                }
+            }.start();
+        }
     }
 
     @Override
@@ -84,30 +98,21 @@ public class DemoMeetingActivity extends MeetingActivity {
 
     private void createSharingInd() {
         Log.i(TAG, "createSharingInd");
-        try {
-            File f = new File(PATH_TO_SHARING_IND);
-            if (!f.exists()) {
-                f.createNewFile();
-                //f.setReadable(true, false);
-            }
-            FileOutputStream fos = new FileOutputStream(f);
-            DataOutputStream dos = new DataOutputStream(fos);
-            dos.writeInt(this.hashCode());
-            dos.flush();
-            dos.close();
-            fos.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (producer != null) {
+            new Thread() {
+                @Override
+                public void run() {
+                    SendNSQMessageTask t = new SendNSQMessageTask();
+                    t.execute();
+                }
+            }.start();
         }
     }
 
     private void removeSharingInd() {
         Log.i(TAG, "removeSharingInd");
         try {
-            File f = new File(PATH_TO_SHARING_IND);
-            if (f.exists()) {
-                f.delete();
-            }
+            String message = Integer.toString(0);
         } catch (Exception e) {
             Log.i(TAG, e.getStackTrace().toString());
         }
@@ -117,21 +122,12 @@ public class DemoMeetingActivity extends MeetingActivity {
         Log.i(TAG, "onSharingIndExist");
         if (!isAtBack && !isSharingOut) {
             try {
-                File f = new File(PATH_TO_SHARING_IND);
-                FileInputStream fis = new FileInputStream(f);
-                DataInputStream dis = new DataInputStream(fis);
-                int rint = dis.readInt();
-                dis.close();
-                fis.close();
-                Log.d(TAG, "rint=" + rint + ", this.hashCode=" + hashCode);
-                if (rint != hashCode) {
-                    Log.i(TAG, "sharing ind exists and not sharing out");
+                Log.i(TAG, "sharing ind exists and not sharing out");
 
-                    //TODO: take Zoom to background
-                    onBackPressed();
-                    //switchToHomeActivity();
-                    isAtBack = true;
-                }
+                //TODO: take Zoom to background
+                onBackPressed();
+                //switchToHomeActivity();
+                isAtBack = true;
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -160,28 +156,49 @@ public class DemoMeetingActivity extends MeetingActivity {
         }
     }
 
-    class CheckIndTask extends AsyncTask {
+    class SharingIndHandler implements SyncResponseHandler {
+        public boolean handleMessage(Message msg) throws NSQException {
+            try {
+                int hc = Integer.parseInt(new String(msg.getBody()));
+                Log.i(TAG, "Receiving: " + hc);
+                if (hc == 0) {
+                    onSharingIndRemoved();
+                } else if (hc != hashCode) {
+                    onSharingIndExist();
+                }
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+
+            return true;
+        }
+    }
+
+
+    class CreateNSQReaderTask extends AsyncTask {
         @Override
         protected Object doInBackground(Object... params) {
-            File f = new File(PATH_TO_SHARING_IND);
-            do {
-                Log.d(TAG, "CheckIndTask isSharingOut=" + isSharingOut + ";f.exists()=" + f.exists());
-                String[] pl = f.getParentFile().list();
-                for (String s : pl) {
-                    Log.d(TAG, s);
-                }
-                if (f.exists()) {
-                    onSharingIndExist();
-                } else if (isAtBack) {
-                    onSharingIndRemoved();
-                }
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    break;
-                }
-            } while (!isStopping);
+            SyncResponseHandler sh = new SharingIndHandler();
+            reader = new SyncResponseReader(NSQ_TOPIC, hashCode + "#ephemeral", sh);
+            Log.i(TAG, "NSQReader created");
+            if (reader != null) {
+                Log.d(TAG, "reader.addLookupd");
+                reader.addLookupd(new BasicLookupd(NSC_RECV_ADDRESS));
+            }
+            return null;
+        }
+    }
+
+    class SendNSQMessageTask extends AsyncTask {
+        @Override
+        protected Object doInBackground(Object... params) {
+            try {
+                String message = Integer.toString(hashCode);
+                Log.i(TAG, "Sending: " + message);
+                producer.put(message);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             return null;
         }
     }
