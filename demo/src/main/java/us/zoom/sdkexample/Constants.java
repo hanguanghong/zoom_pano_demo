@@ -20,4 +20,7 @@ public interface Constants {
 	// TODO change it to your access token
 	public final static String ZOOM_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjbGllbnQiLCJ1aWQiOiJUX01VelRoOFJwZTN4X2RjSnBGU3hRIiwiaXNzIjoid2ViIiwic3R5IjoxMDAsImNsdCI6MCwic3RrIjoidUlSM3VYTmp6dTZtYWVXbTVZR09RcjM1QmhtZDI4WTJsS21NcUdBbEhnVS5CZ1FnUlhKWVFqbE1URUk0VFZWbFZVNVJkVk5HTW5wQ1JrSTNOMVZaU1RONEsyRkFNemN6T0RZd056Qm1OVGhoWm1Nd016azRPVGc0TkRZeFl6QTBNakZsT1dabU56SmtZbUpqTmpZME1UaGlNR0UyWmpZNVl6WTROemRqWVRjMU9EWmhaUUFNTTBOQ1FYVnZhVmxUTTNNOUFBIiwiZXhwIjoxNTMzNzAyOTgzLCJpYXQiOjE1MzM2OTU3ODMsImFpZCI6InFyMjlPeVYxUmlDVXJWQjItR2ZNNVEiLCJjaWQiOiIifQ.2WPRiCYmkVTHvNKOySQP9mtUnkkSvx_KLSCtf8_THIY";
 
+	public final static String NSQ_SEND_ADDRESS = "http://10.220.225.29:4151";
+	public final static String NSC_RECV_ADDRESS = "http://10.220.225.29:4161";
+	public final static String NSQ_TOPIC = "zoomShare";
 }
