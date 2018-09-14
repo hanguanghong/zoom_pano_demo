@@ -74,6 +74,7 @@ public class DemoMeetingActivity extends MeetingActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        getConfParams();
         Log.i(TAG, "onCreate " + this.hashCode());
         super.onCreate(savedInstanceState);
         LocalBroadcastManager.getInstance(this).registerReceiver(
@@ -103,7 +104,7 @@ public class DemoMeetingActivity extends MeetingActivity {
     @Override
     protected void onMeetingConnected() {
         Log.i(TAG, "onMeetingConnected");
-        /*
+        /* TODO: try to use service
         Intent i = new Intent(this, NSQService.class);
         i.putExtra("hashCode", this.hashCode);
         startService(i);
@@ -116,21 +117,25 @@ public class DemoMeetingActivity extends MeetingActivity {
     protected void onStartShare()
     {
         Log.i(TAG, "onStartShare");
-        if (isSharingOut()) {
-            Log.i(TAG, "isSharingOut");
-            this.isSharingOut = true;
-        }
         if (isSharingScreen()) {
             Log.i(TAG, "isSharingScreen");
-            createSharingInd();
+            if (isSharingOut()) {
+                Log.i(TAG, "isSharingOut");
+                this.isSharingOut = true;
+                dialJamCall(MainActivity.meetingNumber);
+                createSharingInd();
+            }
         }
     }
 
     @Override
     protected void onStopShare() {
         Log.i(TAG, "onStopShare");
-        this.isSharingOut = false;
-        removeSharingInd();
+        if (isSharingOut) {
+            this.isSharingOut = false;
+            removeSharingInd();
+            hangupJamCall();
+        }
     }
 
     private void createSharingInd() {
@@ -159,6 +164,7 @@ public class DemoMeetingActivity extends MeetingActivity {
                 onBackPressed();
                 //switchToHomeActivity();
                 isAtBack = true;
+                dialJamCall(MainActivity.meetingNumber);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -182,6 +188,7 @@ public class DemoMeetingActivity extends MeetingActivity {
                             }
                         }
                         */
+            hangupJamCall();
             restore();
             isAtBack = false;
         }
@@ -252,6 +259,64 @@ public class DemoMeetingActivity extends MeetingActivity {
         i.setAction(Intent.ACTION_MAIN);
         i.addCategory(Intent.CATEGORY_LAUNCHER);
         startActivity(i);
+    }
+
+    public void dialJamCall(String meetingNo) {
+        try {
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec("su");
+            DataOutputStream os = new DataOutputStream(p.getOutputStream());
+            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            os.writeBytes("cd /opt/polycom/bin; export LD_LIBRARY_PATH=./; . ./config-helper.sh\n");
+            os.writeBytes("set_config feature.master.callservice.enabled 0 True\n");
+            os.writeBytes("set_config pm.layout.style 0 PANO\n");
+            os.writeBytes("set_config comm.Callpreference.jamfactoryaddress 0 http://10.220.225.148:8080/\n");
+            os.writeBytes("./pbdial 6144 " + meetingNo + " jam\n");
+            os.writeBytes("exit\n");
+            os.flush();
+            os.close();
+            p.waitFor();
+            String line;
+            StringBuilder sb = new StringBuilder(4096);
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+                sb.append("\n");
+            }
+            br.close();
+            Log.d(TAG, sb.toString());
+            Log.i(TAG, "dialed jam call");
+        } catch (Exception e) {
+            Log.i(TAG, e.getMessage() + e.getCause());
+        }
+    }
+
+    public void hangupJamCall() {
+        try {
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec("su");
+            DataOutputStream os = new DataOutputStream(p.getOutputStream());
+            BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            os.writeBytes("cd /opt/polycom/bin; export LD_LIBRARY_PATH=./; . ./config-helper.sh\n");
+            os.writeBytes("./pbhangup\n");
+            os.writeBytes("exit\n");
+            os.flush();
+            os.close();
+            p.waitFor();
+            String line;
+            StringBuilder sb = new StringBuilder(4096);
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+                sb.append("\n");
+            }
+            br.close();
+            Log.d(TAG, sb.toString());
+            Log.i(TAG, "hangup jam call");
+
+            Intent intent = new Intent("clean-session");
+            sendBroadcast(intent);
+        } catch (Exception e) {
+            Log.i(TAG, e.getMessage() + e.getCause());
+        }
     }
 
 }
