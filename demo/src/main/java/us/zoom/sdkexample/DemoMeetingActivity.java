@@ -313,7 +313,7 @@ public class DemoMeetingActivity extends MeetingActivity {
             Log.d(TAG, sb.toString());
             Log.i(TAG, "hangup jam call");
 
-            Intent intent = new Intent("clean-session");
+            Intent intent = new Intent("clean_session");
             sendBroadcast(intent);
         } catch (Exception e) {
             Log.i(TAG, e.getMessage() + e.getCause());
