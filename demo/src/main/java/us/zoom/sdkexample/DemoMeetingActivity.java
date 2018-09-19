@@ -80,6 +80,13 @@ public class DemoMeetingActivity extends MeetingActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 messageReceiver, new IntentFilter("nsq"));
         Log.i(TAG, LocalBroadcastManager.getInstance(this).toString());
+        /* TODO: try to use service
+        Intent i = new Intent(this, NSQService.class);
+        i.putExtra("hashCode", this.hashCode);
+        startService(i);
+        */
+        CreateNSQReaderTask t = new CreateNSQReaderTask();
+        t.execute();
     }
 
     protected void onResume() {
@@ -96,21 +103,10 @@ public class DemoMeetingActivity extends MeetingActivity {
 
     public void onDestroy() {
         Log.i(TAG, "onDestory");
+        hangupJamCall();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(messageReceiver);
         //stopService(new Intent(this, NSQService.class));
         super.onDestroy();
-    }
-
-    @Override
-    protected void onMeetingConnected() {
-        Log.i(TAG, "onMeetingConnected");
-        /* TODO: try to use service
-        Intent i = new Intent(this, NSQService.class);
-        i.putExtra("hashCode", this.hashCode);
-        startService(i);
-        */
-        CreateNSQReaderTask t = new CreateNSQReaderTask();
-        t.execute();
     }
 
     @Override
