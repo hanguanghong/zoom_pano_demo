@@ -251,10 +251,9 @@ public class DemoMeetingActivity extends MeetingActivity {
 
     private void restore() {
         Log.i(TAG, "restore");
-        Intent i = new Intent(DemoMeetingActivity.this, DemoMeetingActivity.class);
-        i.setAction(Intent.ACTION_MAIN);
-        i.addCategory(Intent.CATEGORY_LAUNCHER);
-        startActivity(i);
+        Intent intent = new Intent(getApplicationContext(), DemoMeetingActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        startActivity(intent);
     }
 
     public void dialJamCall(String meetingNo) {
