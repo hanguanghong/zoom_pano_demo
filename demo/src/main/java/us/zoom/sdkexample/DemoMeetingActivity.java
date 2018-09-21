@@ -24,6 +24,7 @@ import android.os.FileObserver;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Messenger;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.View;
@@ -38,17 +39,17 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.List;
 import ly.bit.nsq.Message;
 
-import static us.zoom.sdkexample.Constants.NSC_RECV_ADDRESS;
-import static us.zoom.sdkexample.Constants.NSQ_SEND_ADDRESS;
-import static us.zoom.sdkexample.Constants.NSQ_TOPIC;
 
-public class DemoMeetingActivity extends MeetingActivity {
+public class DemoMeetingActivity extends MeetingActivity implements Constants {
     private final static String TAG = "Zoom Demo MeetingAct";
+
+    private String meetingNumber;
 
     private NSQProducer producer = new NSQProducer(NSQ_SEND_ADDRESS, NSQ_TOPIC);
     private SyncResponseReader reader;
@@ -110,6 +111,13 @@ public class DemoMeetingActivity extends MeetingActivity {
     }
 
     @Override
+    protected void onMeetingConnected() {
+        Log.i(TAG, "onMeetingConnected");
+        readMeetingNoFromFile();
+        super.onMeetingConnected();
+    }
+
+    @Override
     protected void onStartShare()
     {
         Log.i(TAG, "onStartShare");
@@ -118,7 +126,7 @@ public class DemoMeetingActivity extends MeetingActivity {
             if (isSharingOut()) {
                 Log.i(TAG, "isSharingOut");
                 this.isSharingOut = true;
-                dialJamCall(MainActivity.meetingNumber);
+                dialJamCall(meetingNumber);
                 createSharingInd();
             }
         }
@@ -160,7 +168,7 @@ public class DemoMeetingActivity extends MeetingActivity {
                 onBackPressed();
                 //switchToHomeActivity();
                 isAtBack = true;
-                dialJamCall(MainActivity.meetingNumber);
+                dialJamCall(meetingNumber);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -315,4 +323,30 @@ public class DemoMeetingActivity extends MeetingActivity {
         }
     }
 
+    private void readMeetingNoFromFile() {
+        File f = new File(MEETINGNO_FILE);
+        if (f.exists()) {
+            meetingNumber = new String();
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(f);
+                char current;
+                while (fis.available() > 0) {
+                    current = (char)fis.read();
+                    meetingNumber = meetingNumber + String.valueOf(current);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        Log.i(TAG, "read meetingNumber=" + meetingNumber);
+    }
 }

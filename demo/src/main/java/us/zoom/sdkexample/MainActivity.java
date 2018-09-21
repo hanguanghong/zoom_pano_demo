@@ -22,11 +22,9 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class MainActivity extends Activity implements Constants, ZoomSDKInitializeListener, MeetingServiceListener {
 
@@ -40,7 +38,7 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 
 	private boolean mbPendingStartMeeting = false;
 
-	public static String meetingNumber = "";
+	private String meetingNumber = "";
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -115,6 +113,8 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			return;
 		}
 
+		writeMeetingNumberToFile();
+
 		ZoomSDK zoomSDK = ZoomSDK.getInstance();
 		
 		if(!zoomSDK.isInitialized()) {
@@ -156,17 +156,15 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 	}
 	
 	public void onClickBtnStartMeeting(View view) {
-		String meetingNo = mEdtMeetingNo.getText().toString().trim();
+		meetingNumber = mEdtMeetingNo.getText().toString().trim();
 
-		if(meetingNo.length() == 0) {
+		if(meetingNumber.length() == 0) {
 			Toast.makeText(this, "You need to enter a meeting number/ vanity  which you want to join.", Toast.LENGTH_LONG).show();
 			return;
 		}
 
-		if(meetingNo.length() != 0) {
-			Toast.makeText(this, "Both meeting number and vanity  have value,  just set one of them", Toast.LENGTH_LONG).show();
-			return;
-		}
+		File f = new File(MEETINGNO_FILE);
+		f.delete();
 
 		ZoomSDK zoomSDK = ZoomSDK.getInstance();
 
@@ -180,9 +178,9 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		if(meetingService.getMeetingStatus() != MeetingStatus.MEETING_STATUS_IDLE) {
 			long lMeetingNo = 0;
 			try {
-				lMeetingNo = Long.parseLong(meetingNo);
+				lMeetingNo = Long.parseLong(meetingNumber);
 			} catch (NumberFormatException e) {
-				Toast.makeText(this, "Invalid meeting number: " + meetingNo, Toast.LENGTH_LONG).show();
+				Toast.makeText(this, "Invalid meeting number: " + meetingNumber, Toast.LENGTH_LONG).show();
 				return;
 			}
 			
@@ -234,7 +232,7 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		params.userType = STYPE;;
 		params.displayName = DISPLAY_NAME;
 		params.zoomAccessToken = ZOOM_ACCESS_TOKEN;
-		params.meetingNo = meetingNo;
+		params.meetingNo = meetingNumber;
 
 		int ret = meetingService.startMeetingWithParams(this, params, opts);
 		
@@ -254,6 +252,21 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		
 		if(meetingEvent == MeetingEvent.MEETING_DISCONNECTED) {
 			meetingNumber = "";
+		}
+	}
+
+	public void writeMeetingNumberToFile() {
+		try {
+			File f = new File(MEETINGNO_FILE);
+			if (f.exists()) {
+				f.delete();
+			}
+			FileWriter fw = new FileWriter(f);
+			fw.write(meetingNumber);
+			fw.flush();
+			fw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 

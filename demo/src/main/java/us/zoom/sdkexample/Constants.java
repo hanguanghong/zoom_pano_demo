@@ -23,4 +23,5 @@ public interface Constants {
 	public final static String NSQ_SEND_ADDRESS = "http://10.220.225.29:4151";
 	public final static String NSC_RECV_ADDRESS = "http://10.220.225.29:4161";
 	public final static String NSQ_TOPIC = "zoomShare";
+	public final static String MEETINGNO_FILE = "/tmp/zoomMeetingNo";
 }
