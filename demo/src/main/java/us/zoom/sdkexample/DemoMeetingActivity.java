@@ -75,7 +75,6 @@ public class DemoMeetingActivity extends MeetingActivity implements Constants {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        getConfParams();
         Log.i(TAG, "onCreate " + this.hashCode());
         super.onCreate(savedInstanceState);
         LocalBroadcastManager.getInstance(this).registerReceiver(
@@ -114,6 +113,7 @@ public class DemoMeetingActivity extends MeetingActivity implements Constants {
     protected void onMeetingConnected() {
         Log.i(TAG, "onMeetingConnected");
         readMeetingNoFromFile();
+        Log.i(TAG, "getNumberOfCameras=" + getmCameraComponent().getNumberOfCameras());
         super.onMeetingConnected();
     }
 

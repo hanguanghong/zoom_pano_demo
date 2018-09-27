@@ -1,5 +1,6 @@
 package us.zoom.sdkexample;
 
+import us.zoom.sdk.InMeetingService;
 import us.zoom.sdk.JoinMeetingOptions;
 import us.zoom.sdk.JoinMeetingParams;
 import us.zoom.sdk.MeetingError;
@@ -15,6 +16,7 @@ import us.zoom.sdk.ZoomSDK;
 import us.zoom.sdk.ZoomSDKInitializeListener;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
@@ -34,7 +36,7 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 	private EditText mEdtMeetingPassword;
 	
 	private final static int STYPE = MeetingService.USER_TYPE_API_USER;
-	private final static String DISPLAY_NAME = "Zoom Demo";
+	private final static String DISPLAY_NAME = getDeviceName();
 
 	private boolean mbPendingStartMeeting = false;
 
@@ -126,16 +128,16 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		
 		JoinMeetingOptions opts = new JoinMeetingOptions();
 //		opts.no_driving_mode = true;
-//		opts.no_invite = true;
+		opts.no_invite = true;
 //		opts.no_meeting_end_message = true;
 //		opts.no_titlebar = true;
 //		opts.no_bottom_toolbar = true;
-//		opts.no_dial_in_via_phone = true;
-//		opts.no_dial_out_to_phone = true;
+		opts.no_dial_in_via_phone = true;
+		opts.no_dial_out_to_phone = true;
 //		opts.no_disconnect_audio = true;
 //		opts.no_share = true;
 //		opts.invite_options = InviteOptions.INVITE_VIA_EMAIL + InviteOptions.INVITE_VIA_SMS;
-//		opts.no_audio = true;
+		opts.no_audio = true;
 //		opts.no_video = true;
 //		opts.meeting_views_options = MeetingViewsOptions.NO_BUTTON_SHARE;
 //		opts.no_meeting_error_message = true;
@@ -163,8 +165,7 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 			return;
 		}
 
-		File f = new File(MEETINGNO_FILE);
-		f.delete();
+		writeMeetingNumberToFile();
 
 		ZoomSDK zoomSDK = ZoomSDK.getInstance();
 
@@ -222,8 +223,8 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 //		opts.no_share = true;
 //		opts.invite_options = InviteOptions.INVITE_ENABLE_ALL;
 		opts.no_audio = true;
-		opts.no_video = true;
-		opts.meeting_views_options = MeetingViewsOptions.NO_BUTTON_VIDEO;
+//		opts.no_video = true;
+//		opts.meeting_views_options = MeetingViewsOptions.NO_BUTTON_VIDEO;
 //		opts.no_meeting_error_message = true;
 
         StartMeetingParamsWithoutLogin params = new StartMeetingParamsWithoutLogin();
@@ -245,13 +246,22 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		
 		Log.i(TAG, "onMeetingEvent, meetingEvent=" + meetingEvent + ", errorCode=" + errorCode
 				+ ", internalErrorCode=" + internalErrorCode);
-		
-		if(meetingEvent == MeetingEvent.MEETING_CONNECT_FAILED && errorCode == MeetingError.MEETING_ERROR_CLIENT_INCOMPATIBLE) {
-			Toast.makeText(this, "Version of ZoomSDK is too low!", Toast.LENGTH_LONG).show();
-		}
-		
-		if(meetingEvent == MeetingEvent.MEETING_DISCONNECTED) {
-			meetingNumber = "";
+
+		switch (meetingEvent) {
+			case MeetingEvent.MEETING_CONNECT_FAILED:
+				if (errorCode == MeetingError.MEETING_ERROR_CLIENT_INCOMPATIBLE) {
+					Toast.makeText(this, "Version of ZoomSDK is too low!", Toast.LENGTH_LONG).show();
+				}
+				break;
+			case MeetingEvent.MEETING_DISCONNECTED:
+				meetingNumber = "";
+				File f = new File(MEETINGNO_FILE);
+				if (f.exists()) {
+					f.delete();
+				}
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -272,5 +282,11 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 
 	public void onClickBtnExit(View view) {
 		finish();
+	}
+
+	public static String getDeviceName() {
+		BluetoothAdapter myDevice = BluetoothAdapter.getDefaultAdapter();
+		String deviceName = myDevice.getName();
+		return deviceName;
 	}
 }
