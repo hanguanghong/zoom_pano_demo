@@ -53,12 +53,9 @@ public class MainActivity extends Activity implements Constants, ZoomSDKInitiali
 		
 		if(savedInstanceState == null) {
 			ZoomSDK sdk = ZoomSDK.getInstance();
-			MeetingService meetingService1 = sdk.getMeetingService();
 			sdk.initialize(this, APP_KEY, APP_SECRET, WEB_DOMAIN, this);
-			MeetingService meetingService2 = sdk.getMeetingService();
 		} else {
 			ZoomSDK sdk = ZoomSDK.getInstance();
-			MeetingService meetingService3 = sdk.getMeetingService();
 			registerMeetingServiceListener();
 		}
 	}

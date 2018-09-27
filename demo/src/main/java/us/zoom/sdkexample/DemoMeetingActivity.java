@@ -1,49 +1,28 @@
 package us.zoom.sdkexample;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import ly.bit.nsq.Message;
 import ly.bit.nsq.NSQProducer;
 import ly.bit.nsq.exceptions.NSQException;
 import ly.bit.nsq.lookupd.BasicLookupd;
 import ly.bit.nsq.syncresponse.SyncResponseHandler;
 import ly.bit.nsq.syncresponse.SyncResponseReader;
 import us.zoom.sdk.MeetingActivity;
-
-import android.app.Activity;
-import android.app.ActivityManager;
-import android.app.Service;
-import android.content.AsyncQueryHandler;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.ServiceConnection;
-import android.content.res.Configuration;
-import android.os.AsyncTask;
-import android.os.Bundle;
-import android.os.FileObserver;
-import android.os.Handler;
-import android.os.IBinder;
-import android.os.Messenger;
-import android.provider.MediaStore;
-import android.support.annotation.Nullable;
-import android.support.v4.content.LocalBroadcastManager;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.WindowManager;
-import android.widget.Button;
-import android.util.Log;
-
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.util.List;
-import ly.bit.nsq.Message;
 
 
 public class DemoMeetingActivity extends MeetingActivity implements Constants {
@@ -76,11 +55,13 @@ public class DemoMeetingActivity extends MeetingActivity implements Constants {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate " + this.hashCode());
+        this.hashCode = this.hashCode();
         super.onCreate(savedInstanceState);
+        /* TODO: try to use service
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 messageReceiver, new IntentFilter("nsq"));
         Log.i(TAG, LocalBroadcastManager.getInstance(this).toString());
-        /* TODO: try to use service
+
         Intent i = new Intent(this, NSQService.class);
         i.putExtra("hashCode", this.hashCode);
         startService(i);
@@ -92,7 +73,6 @@ public class DemoMeetingActivity extends MeetingActivity implements Constants {
     protected void onResume() {
         Log.i(TAG, "onResume " + this.hashCode());
         super.onResume();
-        this.hashCode = this.hashCode();
     }
 
     protected void onStop() {
